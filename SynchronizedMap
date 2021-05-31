@@ -1,0 +1,43 @@
+package main
+
+import (
+	"sync"
+)
+// 协程安全的map
+type SynchonizedMap struct {
+	rw *sync.RWMutex
+	data map[interface{}]interface{}
+}
+
+func (sm *SynchonizedMap) Put(k, v interface{})  {
+	sm.rw.Lock()
+	defer sm.rw.Unlock()
+	sm.data[k] = v
+}
+
+func (sm *SynchonizedMap) Get(k interface{}) interface{} {
+	sm.rw.RLock()
+	defer sm.rw.RUnlock()
+	return sm.data[k]
+}
+
+func (sm *SynchonizedMap) Delete(k interface{})  {
+	sm.rw.Lock()
+	defer sm.rw.Unlock()
+	delete(sm.data, k)
+}
+
+func (sm *SynchonizedMap) Each(fn func(interface{}, interface{}))  {
+	sm.rw.RLock()
+	defer sm.rw.RUnlock()
+	for k, v := range sm.data {
+		fn(k, v)
+	}
+}
+
+func NewSynchonizedMap() *SynchonizedMap {
+	return &SynchonizedMap{
+		rw: new(sync.RWMutex),
+		data: make(map[interface{}]interface{}),
+	}
+}
